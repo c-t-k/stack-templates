@@ -1,0 +1,141 @@
+{-# START_FILE package.yaml #-}
+name: {{name}}
+version: 0.1.0.0
+synopsis: FILL ME OUT.
+description: Please see README.md
+homepage: https://github.com/{{github-username}}{{^github-username}}c-t-k{{/github-username}}/{{name}}#readme
+license: BSD3
+author: {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}}
+maintainer: {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}} <{{author-email}}{{^author-email}}chris.t.kaminski@gmail.com{{/author-email}}>
+copyright: {{copyright}}{{^copyright}}{{year}} {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}}{{/copyright}}
+category: {{category}}{{^category}}Web{{/category}}
+github: {{github-username}}{{^github-username}}c-t-k{{/github-username}}/{{name}}
+
+ghc-options: -Wall -fwarn-tabs
+
+dependencies:
+  - base >= 4.7 && < 5
+  - async
+  - ansi-terminal
+  - ansi-wl-pprint
+  - bytestring
+  - containers
+  - deepseq
+  - directory
+  - filepath
+  - process
+  - mtl
+  - stm
+  - string-conversions
+  - text
+  - transformers
+  - unordered-containers
+  - vector
+
+when:
+  - condition: os(windows)
+    then:
+      dependencies: Win32
+    else:
+      dependencies: unix
+
+library:
+  source-dirs: src
+
+executables:
+  {{name}}:
+    source-dirs: app
+    main: Main.hs
+    ghc-options: -threaded -rtsopts -with-rtsopts=-N
+    dependencies:
+      - {{name}}
+      - optparse-applicative
+
+tests:
+  {{name}}-test:
+    source-dirs: test
+    main: Spec.hs
+    ghc-options: -threaded -rtsopts -with-rtsopts=-N
+    dependencies:
+      - {{name}}
+      - hspec
+      - QuickCheck
+      - tasty
+      - tasty-quickcheck
+      - tasty-hspec
+
+{-# START_FILE Setup.hs #-}
+import Distribution.Simple
+main = defaultMain
+
+{-# START_FILE src/Intro.hs #-}
+module Intro
+    ( someFunc
+    ) where
+
+someFunc :: IO ()
+someFunc = putStrLn "someFunc"
+
+{-# START_FILE app/Main.hs #-}
+main :: IO ()
+main = putStrLn "Main not yet implemented"
+
+{-# START_FILE test/Spec.hs #-}
+main :: IO ()
+main = putStrLn "Test suite not yet implemented"
+
+{-# START_FILE .gitignore #-}
+# Created by https://www.gitignore.io/api/haskell
+
+### Haskell ###
+dist
+dist-*
+cabal-dev
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+.hpc
+.hsenv
+.cabal-sandbox/
+cabal.sandbox.config
+*.prof
+*.aux
+*.hp
+*.eventlog
+.stack-work/
+cabal.project.local
+
+{-# START_FILE LICENSE #-}
+Copyright {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}} (c) {{year}}
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Author name here nor the names of other
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
