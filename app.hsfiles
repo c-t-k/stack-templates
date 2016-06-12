@@ -26,6 +26,7 @@ dependencies:
   - filepath
   - process
   - mtl
+  - safe
   - stm
   - string-conversions
   - text
