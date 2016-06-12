@@ -70,7 +70,9 @@ tests:
 import Distribution.Simple
 main = defaultMain
 
-{-# START_FILE src/Intro.hs #-}
+{-# START_FILE src/Intro.hs    #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module Intro (
     module Intro
     ) where
@@ -85,14 +87,17 @@ import           Intro.String         as Intro
 import           Safe                 as Intro
 
 {-# START_FILE src/Intro/String.hs #-}
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 
 module Intro.String
     ( module Data.String.Conversions
     , module Intro.String
+    , String
     ) where
 
+import           Data.String             (String)
 import           Data.String.Conversions
 
 --------------------------------------------------------------------------------
@@ -124,11 +129,21 @@ type ToString a = ConvertibleStrings a String
 -- | Type that can be recovered from a string
 type FromString a = ConvertibleStrings String a
 
-{-# START_FILE app/Main.hs #-}
+{-# START_FILE app/Main.hs     #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+import Intro
+
 main :: IO ()
 main = putStrLn "Main not yet implemented"
 
-{-# START_FILE test/Spec.hs #-}
+{-# START_FILE test/Spec.hs    #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+import Intro
+
 main :: IO ()
 main = putStrLn "Test suite not yet implemented"
 
