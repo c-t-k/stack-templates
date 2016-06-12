@@ -279,6 +279,10 @@ indent_size = 2
 indent_style = space
 indent_size = 4
 
+{-# START_FILE README.md #-}
+# {{name}}
+Fill me out.
+
 {-# START_FILE LICENSE #-}
 Copyright {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}} (c) {{year}}
 
