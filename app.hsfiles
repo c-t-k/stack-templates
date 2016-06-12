@@ -11,7 +11,25 @@ copyright: {{copyright}}{{^copyright}}{{year}} {{author-name}}{{^author-name}}Ch
 category: {{category}}{{^category}}Web{{/category}}
 github: {{github-username}}{{^github-username}}c-t-k{{/github-username}}/{{name}}
 
-ghc-options: -Wall -fwarn-tabs
+ghc-options: -Wall -fwarn-tabs -fno-warn-type-defaults
+
+default-extensions:
+  - ConstraintKinds
+  - DeriveGeneric
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - KindSignatures
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - NoImplicitPrelude
+  - LambdaCase
+  - RankNTypes
+  - ScopedTypeVariables
+
+other-extensions:
+  - OverloadedStrings
 
 dependencies:
   - base >= 4.7 && < 5
@@ -71,26 +89,26 @@ import Distribution.Simple
 main = defaultMain
 
 {-# START_FILE src/Intro.hs    #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Intro (
     module Intro
     ) where
 
-import           BasicPrelude         as Intro hiding (decodeUtf8, encodeUtf8,
-                                                fpFromText, fpToString,
-                                                fpToText, ltextToString,
-                                                readMay, textToString)
+import           BasicPrelude         as Intro hiding
+    ( decodeUtf8
+    , encodeUtf8
+    , fpFromText
+    , fpToString
+    , fpToText
+    , ltextToString
+    , readMay
+    , textToString
+    )
 import           Control.Monad.Except as Intro
 import           Control.Monad.Reader as Intro
 import           Intro.String         as Intro
 import           Safe                 as Intro
 
 {-# START_FILE src/Intro/String.hs #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE NoImplicitPrelude     #-}
-
 module Intro.String
     ( module Data.String.Conversions
     , module Intro.String
@@ -130,7 +148,6 @@ type ToString a = ConvertibleStrings a String
 type FromString a = ConvertibleStrings String a
 
 {-# START_FILE app/Main.hs     #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 import Intro
@@ -139,13 +156,64 @@ main :: IO ()
 main = putStrLn "Main not yet implemented"
 
 {-# START_FILE test/Spec.hs    #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 import Intro
 
 main :: IO ()
 main = putStrLn "Test suite not yet implemented"
+
+{-# START_FILE .ghci #-}
+:set +m
+
+:set -XBangPatterns
+:set -XConstraintKinds
+:set -XCPP
+:set -XDeriveGeneric
+:set -XFlexibleContexts
+:set -XFlexibleInstances
+:set -XFunctionalDependencies
+:set -XGADTs
+:set -XKindSignatures
+:set -XLambdaCase
+:set -XMultiParamTypeClasses
+:set -XMultiWayIf
+:set -XInstanceSigs
+:set -XRankNTypes
+:set -XRecordWildCards
+:set -XScopedTypeVariables
+:set -XTupleSections
+:set -XTypeFamilies
+:set -XTypeOperators
+
+{-# START_FILE .stylish-haskell.yaml #-}
+columns: 100
+language_extensions:
+  - ConstraintKinds
+  - DeriveGeneric
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - KindSignatures
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - NoImplicitPrelude
+  - LambdaCase
+  - RankNTypes
+  - ScopedTypeVariables
+steps:
+  - imports:
+      align: global
+      list_align: after_alias
+      long_list_align: new_line_multiline
+      list_padding: 4
+      separate_lists: true
+  - language_pragmas:
+      style: vertical
+      align: true
+      remove_redundant: true
+  - records: {}
 
 {-# START_FILE .gitignore #-}
 # Created by https://www.gitignore.io/api/haskell
@@ -173,11 +241,15 @@ cabal.project.local
 
 {-# START_FILE .editorconfig #-}
 root = true
-
 charset = utf-8
+
 [*]
 end_of_line = lf
 insert_final_newline = true
+
+[*.{yaml,yml}]
+indent_style = space
+indent_size = 2
 
 [*.hs]
 indent_style = space
