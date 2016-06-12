@@ -18,6 +18,7 @@ dependencies:
   - async
   - ansi-terminal
   - ansi-wl-pprint
+  - basic-prelude
   - bytestring
   - containers
   - deepseq
@@ -69,12 +70,58 @@ import Distribution.Simple
 main = defaultMain
 
 {-# START_FILE src/Intro.hs #-}
-module Intro
-    ( someFunc
+module Intro (
+    module Intro
     ) where
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+import           BasicPrelude         as Intro hiding (decodeUtf8, encodeUtf8,
+                                                fpFromText, fpToString,
+                                                fpToText, ltextToString,
+                                                readMay, textToString)
+import           Control.Monad.Except as Intro
+import           Control.Monad.Reader as Intro
+import           Intro.String         as Intro
+import           Safe                 as Intro
+
+{-# START_FILE src/Intro/String.hs #-}
+{-# LANGUAGE ConstraintKinds  #-}
+{-# LANGUAGE FlexibleContexts #-}
+
+module Intro.String
+    ( module Data.String.Conversions
+    , module Intro.String
+    ) where
+
+import           Data.String.Conversions
+
+--------------------------------------------------------------------------------
+-- * Convenience aliases
+--------------------------------------------------------------------------------
+
+-- | Type that can be converted to a strict bytestring
+type ToSBS a = ConvertibleStrings a SBS
+-- | Type that can be recovered from a strict bytestring
+type FromSBS a = ConvertibleStrings SBS a
+
+-- | Type that can be converted to a lazy bytestring
+type ToLBS a = ConvertibleStrings a LBS
+-- | Type that can be recovered from a lazy bytestring
+type FromLBS a = ConvertibleStrings LBS a
+
+-- | Type that can be converted to a strict text
+type ToST a = ConvertibleStrings a ST
+-- | Type that can be recovered from a strict text
+type FromST a = ConvertibleStrings ST a
+
+-- | Type that can be converted to a lazy text
+type ToLT a = ConvertibleStrings a LT
+-- | Type that can be recovered from a lazy text
+type FromLT a = ConvertibleStrings LT a
+
+-- | Type that can be converted to a string
+type ToString a = ConvertibleStrings a String
+-- | Type that can be recovered from a string
+type FromString a = ConvertibleStrings String a
 
 {-# START_FILE app/Main.hs #-}
 main :: IO ()
@@ -107,6 +154,18 @@ cabal.sandbox.config
 *.eventlog
 .stack-work/
 cabal.project.local
+
+{-# START_FILE .editorconfig #-}
+root = true
+
+charset = utf-8
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+[*.hs]
+indent_style = space
+indent_size = 4
 
 {-# START_FILE LICENSE #-}
 Copyright {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}} (c) {{year}}
