@@ -89,20 +89,20 @@ import Distribution.Simple
 main = defaultMain
 
 {-# START_FILE src/Intro.hs    #-}
-module Intro (
-    module Intro
-    ) where
+module Intro
+  ( module Intro
+  ) where
 
 import           BasicPrelude           as Intro hiding
-    ( decodeUtf8
-    , encodeUtf8
-    , fpFromText
-    , fpToString
-    , fpToText
-    , ltextToString
-    , readMay
-    , textToString
-    )
+  ( decodeUtf8
+  , encodeUtf8
+  , fpFromText
+  , fpToString
+  , fpToText
+  , ltextToString
+  , readMay
+  , textToString
+  )
 import           Control.Concurrent.STM as Intro
 import           Control.DeepSeq        as Intro
 import           Control.Monad.Except   as Intro
@@ -119,9 +119,9 @@ import           Data.Bool     (Bool)
 
 while :: Monad m => (a -> Bool) -> m a -> m a
 while c x = do
-    res <- x
-    if c res then while c x
-    else return res
+  res <- x
+  if c res then while c x
+  else return res
 
 whenM :: Monad m => m Bool -> m () -> m ()
 whenM c x = c >>= (`when` x)
@@ -134,10 +134,10 @@ ifThenElseM c l r = c >>= \c' -> if c' then l else r
 
 {-# START_FILE src/Intro/String.hs #-}
 module Intro.String
-    ( module Data.String.Conversions
-    , module Intro.String
-    , String
-    ) where
+  ( module Data.String.Conversions
+  , module Intro.String
+  , String
+  ) where
 
 import           Data.String             (String)
 import           Data.String.Conversions
@@ -231,7 +231,7 @@ steps:
       align: global
       list_align: after_alias
       long_list_align: new_line_multiline
-      list_padding: 4
+      list_padding: 2
       separate_lists: true
   - language_pragmas:
       style: vertical
@@ -277,7 +277,7 @@ indent_size = 2
 
 [*.hs]
 indent_style = space
-indent_size = 4
+indent_size = 2
 
 {-# START_FILE README.md #-}
 # {{name}}
