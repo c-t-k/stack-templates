@@ -1,0 +1,736 @@
+{-# START_FILE package.yaml #-}
+name: {{name}}
+version: 0.1.0.0
+synopsis: FILL ME OUT.
+description: Please see README.md
+homepage: https://github.com/{{github-username}}{{^github-username}}c-t-k{{/github-username}}/{{name}}#readme
+license: BSD3
+author: {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}}
+maintainer: {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}} <{{author-email}}{{^author-email}}chris.t.kaminski@gmail.com{{/author-email}}>
+copyright: {{copyright}}{{^copyright}}{{year}} {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}}{{/copyright}}
+category: {{category}}{{^category}}Web{{/category}}
+github: {{github-username}}{{^github-username}}c-t-k{{/github-username}}/{{name}}
+
+ghc-options: -Wall -fwarn-tabs -fno-warn-type-defaults
+
+default-extensions:
+  - ConstraintKinds
+  - DeriveGeneric
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - KindSignatures
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - NoImplicitPrelude
+  - LambdaCase
+  - RankNTypes
+  - ScopedTypeVariables
+
+other-extensions:
+  - OverloadedStrings
+
+dependencies:
+  - base >= 4.7 && < 5
+  - async
+  - basic-prelude
+  - bytestring
+  - containers
+  - deepseq
+  - directory
+  - filepath
+  - hakyll
+  - process
+  - mtl
+  - safe
+  - stm
+  - string-conversions
+  - text
+  - transformers
+  - unordered-containers
+  - vector
+
+when:
+  - condition: os(windows)
+    then:
+      dependencies: Win32
+    else:
+      dependencies: unix
+
+executables:
+  site:
+    source-dirs:
+      - src
+    main: Site.hs
+    ghc-options: -threaded -rtsopts -with-rtsopts=-N
+
+{-# START_FILE Setup.hs #-}
+import Distribution.Simple
+main = defaultMain
+
+{-# START_FILE src/Intro.hs    #-}
+module Intro
+  ( module Intro
+  ) where
+
+import           BasicPrelude           as Intro hiding
+  ( decodeUtf8
+  , encodeUtf8
+  , fpFromText
+  , fpToString
+  , fpToText
+  , ltextToString
+  , readMay
+  , textToString
+  )
+import           Control.Concurrent.STM as Intro
+import           Control.DeepSeq        as Intro
+import           Control.Monad.Except   as Intro
+import           Control.Monad.Reader   as Intro
+import           Intro.Monad            as Intro
+import           Intro.String           as Intro
+import           Safe                   as Intro
+
+{-# START_FILE src/Intro/Monad.hs #-}
+module Intro.Monad where
+
+import           Control.Monad
+import           Data.Bool     (Bool)
+
+while :: Monad m => (a -> Bool) -> m a -> m a
+while c x = do
+  res <- x
+  if c res then while c x
+  else return res
+
+whenM :: Monad m => m Bool -> m () -> m ()
+whenM c x = c >>= (`when` x)
+
+unlessM :: Monad m => m Bool -> m () -> m ()
+unlessM c x = c >>= (`unless` x)
+
+ifThenElseM :: Monad m => m Bool -> m a -> m a -> m a
+ifThenElseM c l r = c >>= \c' -> if c' then l else r
+
+{-# START_FILE src/Intro/String.hs #-}
+module Intro.String
+  ( module Data.String.Conversions
+  , module Intro.String
+  , String
+  ) where
+
+import           Data.String             (String)
+import           Data.String.Conversions
+
+--------------------------------------------------------------------------------
+-- * Convenience aliases
+--------------------------------------------------------------------------------
+
+-- | Type that can be converted to a strict bytestring
+type ToSBS a = ConvertibleStrings a SBS
+-- | Type that can be recovered from a strict bytestring
+type FromSBS a = ConvertibleStrings SBS a
+
+-- | Type that can be converted to a lazy bytestring
+type ToLBS a = ConvertibleStrings a LBS
+-- | Type that can be recovered from a lazy bytestring
+type FromLBS a = ConvertibleStrings LBS a
+
+-- | Type that can be converted to a strict text
+type ToST a = ConvertibleStrings a ST
+-- | Type that can be recovered from a strict text
+type FromST a = ConvertibleStrings ST a
+
+-- | Type that can be converted to a lazy text
+type ToLT a = ConvertibleStrings a LT
+-- | Type that can be recovered from a lazy text
+type FromLT a = ConvertibleStrings LT a
+
+-- | Type that can be converted to a string
+type ToString a = ConvertibleStrings a String
+-- | Type that can be recovered from a string
+type FromString a = ConvertibleStrings String a
+
+{-# START_FILE src/Site.hs     #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+import           Hakyll
+import           Intro
+
+config :: Configuration
+config = defaultConfiguration { providerDirectory = "assets" }
+
+main :: IO ()
+main = hakyllWith config $ do
+    match "images/*" $ do
+        route   idRoute
+        compile copyFileCompiler
+
+    match "css/*" $ do
+        route   idRoute
+        compile compressCssCompiler
+
+    match (fromList ["about.rst", "contact.markdown"]) $ do
+        route   $ setExtension "html"
+        compile $ pandocCompiler
+            >>= loadAndApplyTemplate "templates/default.html" defaultContext
+            >>= relativizeUrls
+
+    match "posts/*" $ do
+        route $ setExtension "html"
+        compile $ pandocCompiler
+            >>= loadAndApplyTemplate "templates/post.html"    postCtx
+            >>= loadAndApplyTemplate "templates/default.html" postCtx
+            >>= relativizeUrls
+
+    create ["archive.html"] $ do
+        route idRoute
+        compile $ do
+            posts <- recentFirst =<< loadAll "posts/*"
+            let archiveCtx =
+                    listField "posts" postCtx (return posts) `mappend`
+                    constField "title" "Archives"            `mappend`
+                    defaultContext
+
+            makeItem ""
+                >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
+                >>= loadAndApplyTemplate "templates/default.html" archiveCtx
+                >>= relativizeUrls
+
+    match "index.html" $ do
+        route idRoute
+        compile $ do
+            posts <- recentFirst =<< loadAll "posts/*"
+            let indexCtx =
+                    listField "posts" postCtx (return posts) `mappend`
+                    constField "title" "Home"                `mappend`
+                    defaultContext
+
+            getResourceBody
+                >>= applyAsTemplate indexCtx
+                >>= loadAndApplyTemplate "templates/default.html" indexCtx
+                >>= relativizeUrls
+
+    match "templates/*" $ compile templateBodyCompiler
+
+postCtx :: Context String
+postCtx =
+    dateField "date" "%B %e, %Y" `mappend`
+    defaultContext
+
+{-# START_FILE assets/css/default.css #-}
+body {
+    color: black;
+    font-size: 16px;
+    margin: 0px auto 0px auto;
+    width: 600px;
+}
+
+div#header {
+    border-bottom: 2px solid black;
+    margin-bottom: 30px;
+    padding: 12px 0px 12px 0px;
+}
+
+div#logo a {
+    color: black;
+    float: left;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+div#header #navigation {
+    text-align: right;
+}
+
+div#header #navigation a {
+    color: black;
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 12px;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+div#footer {
+    border-top: solid 2px black;
+    color: #555;
+    font-size: 12px;
+    margin-top: 30px;
+    padding: 12px 0px 12px 0px;
+    text-align: right;
+}
+
+h1 {
+    font-size: 24px;
+}
+
+h2 {
+    font-size: 20px;
+}
+
+div.info {
+    color: #555;
+    font-size: 14px;
+    font-style: italic;
+}
+
+{-# START_FILE assets/posts/2015-08-12-spqr.markdown #-}
+---
+title: S.P.Q.R.
+---
+
+Mauris in lorem nisl. Maecenas tempus facilisis ante, eget viverra nisl
+tincidunt et. Donec turpis lectus, mattis ac malesuada a, accumsan eu libero.
+Morbi condimentum, tortor et tincidunt ullamcorper, sem quam pretium nulla, id
+convallis lectus libero nec turpis. Proin dapibus nisi id est sodales nec
+ultrices tortor pellentesque. Vivamus vel nisi ac lacus sollicitudin vulputate
+ac ut ligula. Nullam feugiat risus eget eros gravida in molestie sapien euismod.
+Nunc sed hendrerit orci. Nulla mollis consequat lorem ac blandit. Ut et turpis
+mauris. Nulla est odio, posuere id ullamcorper sit amet, tincidunt vel justo.
+Curabitur placerat tincidunt varius. Nulla vulputate, ipsum eu consectetur
+mollis, dui nibh aliquam neque, at ultricies leo ligula et arcu. Proin et mi
+eget tellus sodales lobortis. Sed tempor, urna vel pulvinar faucibus, lectus
+urna vehicula ante, at facilisis dolor odio at lorem. Morbi vehicula euismod
+urna, et imperdiet urna ornare vitae.
+
+Sed tincidunt sollicitudin ultrices. In hac habitasse platea dictumst. Morbi
+ligula lectus, egestas at ultricies nec, fringilla et tellus. Duis urna lorem,
+bibendum a ornare sed, euismod sed nunc. Aliquam tempor massa at velit fringilla
+fringilla. Praesent sit amet tempor felis. Maecenas id felis ac velit aliquam
+tempor a sit amet orci. Nunc placerat nulla pellentesque sem commodo cursus.
+Praesent quis sapien orci, quis ultricies augue. Nam vestibulum sem non augue
+semper tincidunt pellentesque ipsum volutpat. Duis congue, nunc a aliquam
+luctus, quam ante convallis nisi, ac pellentesque lacus orci vel turpis. Cum
+sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus
+mus. Suspendisse hendrerit nisl eu felis sagittis faucibus. Nunc eu congue
+lorem. Quisque non nibh nisi, et ultrices massa. Sed vitae erat vitae nulla
+pellentesque fermentum.
+
+Ut diam nunc, consectetur ut ultrices eu, iaculis sed felis. Sed lacinia, odio
+et accumsan luctus, arcu ipsum accumsan erat, sit amet malesuada libero lacus et
+velit. Donec accumsan tristique tristique. Proin a metus magna, vitae mattis
+nisl. Integer a libero ipsum. Mauris faucibus eleifend metus id sodales. Morbi
+ornare, nibh nec facilisis imperdiet, turpis sem commodo lorem, id commodo
+mauris metus vitae justo. Etiam at pellentesque tortor. Proin mollis accumsan
+ligula, nec tempus augue auctor quis. Nulla lacinia, mi quis lobortis auctor,
+nisi diam posuere dui, pulvinar feugiat dui libero eget quam. Fusce eu risus
+nunc, a consectetur orci. Class aptent taciti sociosqu ad litora torquent per
+conubia nostra, per inceptos himenaeos. Maecenas venenatis aliquet orci, a
+ultricies sem facilisis eu. Donec dolor purus, porta condimentum convallis nec,
+dignissim nec libero.
+
+Etiam rutrum ultricies dui, et interdum metus elementum et. Nulla sapien nunc,
+interdum tristique porttitor in, laoreet vitae mi. Ut vehicula auctor mauris sit
+amet bibendum. Phasellus adipiscing mattis libero, eget adipiscing erat
+dignissim at. Vivamus convallis malesuada metus nec cursus. Ut cursus, lorem
+eleifend sollicitudin condimentum, felis tortor sodales augue, ac tempus lacus
+ipsum vitae quam. Vestibulum vitae lacus non tortor vehicula iaculis faucibus
+quis massa.
+
+Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus
+mus. Duis malesuada neque nec ante porttitor accumsan. Suspendisse potenti.
+Aliquam in lacus magna, imperdiet laoreet lectus. Praesent id diam nec ante
+commodo rhoncus nec vel augue. Pellentesque tortor massa, dignissim ut sagittis
+sed, hendrerit vitae nunc. Nam gravida, urna vitae hendrerit rutrum, felis augue
+vulputate tortor, ut varius velit libero nec lectus. In adipiscing massa in est
+scelerisque ullamcorper. Vivamus in nisi metus.
+
+{-# START_FILE assets/posts/2015-10-07-rosa-rosa-rosam.markdown #-}
+---
+title: Rosa Rosa Rosam
+author: Ovidius
+---
+
+Suspendisse pharetra ullamcorper sem et auctor. Suspendisse vitae tellus eu
+turpis dignissim gravida ut ut tortor. Cum sociis natoque penatibus et magnis
+dis parturient montes, nascetur ridiculus mus. Morbi aliquam sapien quis nisl
+sodales non aliquet nisl iaculis. Curabitur fermentum orci vel sapien
+pellentesque id condimentum metus vehicula. Curabitur turpis purus, scelerisque
+at interdum quis, placerat sit amet tortor. Aliquam erat volutpat.
+
+Integer posuere felis non arcu suscipit ullamcorper. Nam tempus risus venenatis
+orci sagittis eu aliquam ante tincidunt. Aenean vehicula ipsum id sapien
+tincidunt commodo. Aliquam erat volutpat. Curabitur vehicula libero ac turpis
+cursus consectetur. Praesent posuere egestas purus et dapibus. Mauris egestas,
+lectus vitae scelerisque ultricies, metus lorem tempor nisi, sed vehicula tortor
+mauris nec urna. Quisque urna tellus, facilisis at mollis eget, adipiscing in
+nisl. Proin quam arcu, euismod et imperdiet sed, ultricies sed orci.
+
+Nulla malesuada sem eget lectus scelerisque nec rhoncus metus interdum. In dui
+felis, rhoncus id scelerisque eget, vulputate id sem. Nulla facilisi. Vestibulum
+eleifend, metus dignissim lacinia ornare, magna nulla vehicula nisi, sed
+molestie mauris ipsum vel turpis. Class aptent taciti sociosqu ad litora
+torquent per conubia nostra, per inceptos himenaeos. Nulla urna leo, vehicula
+eget dignissim a, hendrerit ut risus. Fusce ultricies elementum placerat. Nam at
+dolor sed nisi mollis sollicitudin vitae at urna. Vestibulum iaculis adipiscing
+eros et mollis.
+
+Phasellus ultricies elit eu risus sagittis eu dictum ante ultrices. Nulla
+congue, augue ac placerat tempor, orci mi luctus nisi, at varius ipsum sem sed
+eros. Vivamus eget velit eget felis posuere ornare. In sed metus non est iaculis
+facilisis dapibus sit amet enim. Aliquam viverra tortor eget neque volutpat in
+auctor urna rutrum. Aliquam ligula augue, congue sit amet rutrum in, semper vel
+nulla. Sed tempus porttitor faucibus. Donec cursus sodales nulla, quis lacinia
+mi vehicula vel. Sed nec purus orci. Nam leo sapien, rutrum a ultrices quis,
+placerat vel ligula. Donec massa quam, pellentesque et molestie nec, hendrerit
+id mauris. In hac habitasse platea dictumst. Cras quis quam sem. Curabitur in
+arcu diam, in interdum mauris.
+
+Proin lorem sapien, iaculis et faucibus nec, dictum sed nunc. Pellentesque in
+purus justo. Vestibulum facilisis rutrum nisi, a egestas nunc suscipit sed. Ut
+quis tortor a arcu bibendum placerat non sed ante. Praesent orci sem, posuere
+sit amet cursus molestie, volutpat ut purus. Curabitur aliquam, purus in
+pharetra viverra, lorem leo aliquam tellus, vel consequat felis neque et mauris.
+Aliquam erat volutpat.
+
+{-# START_FILE assets/posts/2015-11-28-carpe-diem.markdown #-}
+---
+title: Carpe Diem
+---
+
+Fusce tortor quam, egestas in posuere quis, porttitor vel turpis. Donec
+vulputate porttitor augue at rhoncus. Proin iaculis consectetur sagittis.
+Curabitur venenatis turpis sit amet purus tristique nec posuere risus laoreet.
+Nullam nisi sem, dapibus id semper id, egestas vel arcu. Morbi porttitor ipsum
+placerat erat consequat sed consequat purus feugiat. Donec auctor elit ut risus
+mattis facilisis. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+Proin vulputate sapien facilisis leo ornare pulvinar. Fusce tempus massa a risus
+semper iaculis. Suspendisse sollicitudin posuere nunc, sit amet rutrum leo
+facilisis mattis. Sed ornare auctor dui, vitae rutrum neque auctor sit amet.
+Proin ac dui magna. Mauris vehicula interdum augue, nec ultrices libero egestas
+quis. Nunc convallis euismod ipsum, id sollicitudin orci consequat ac. Fusce
+bibendum congue libero, in rutrum nulla congue non. Cras sit amet risus tortor,
+eu pellentesque dui. Phasellus euismod enim non nibh sodales quis consectetur
+lorem laoreet. Vivamus a egestas quam. Curabitur in tortor augue, vitae varius
+tellus. Integer varius, elit ac gravida suscipit, eros erat pellentesque nisi,
+et tristique augue odio id nulla. Aliquam sit amet nunc vel tellus hendrerit
+tempus ac vel sem.
+
+Aenean tincidunt sollicitudin sapien ut porttitor. Curabitur molestie adipiscing
+lorem vel scelerisque. Donec vitae interdum est. Proin rutrum vulputate
+faucibus. Suspendisse sit amet felis odio, non volutpat ante. Sed eu lectus
+quam. Curabitur tristique rhoncus est, vel commodo tortor suscipit semper.
+Maecenas feugiat vestibulum nisi id facilisis. Nulla non tincidunt libero.
+Praesent ultrices interdum commodo. Sed euismod nisl auctor leo ultrices rutrum.
+Aliquam nibh felis, congue molestie blandit at, bibendum at eros. Aenean
+tincidunt, tortor iaculis placerat sollicitudin, lorem justo tempor diam, et
+posuere sapien leo et magna. Quisque vel aliquam mauris.
+
+Proin varius tempus fermentum. Cum sociis natoque penatibus et magnis dis
+parturient montes, nascetur ridiculus mus. Sed tincidunt nunc id magna
+adipiscing non sollicitudin turpis tempor. Etiam vel elit ipsum, quis euismod
+velit. Quisque elementum magna vitae quam venenatis lacinia. Sed at arcu ipsum.
+Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos
+himenaeos. Donec ut lorem ac sapien cursus lacinia sit amet mollis dolor.
+Vivamus tempus odio nec magna faucibus sed hendrerit lorem tempor.
+
+Vestibulum eu nisi arcu. Curabitur nisi risus, fermentum ut lacinia ut, interdum
+nec magna. Nunc aliquet gravida massa, eu aliquam lorem faucibus at. Sed
+sollicitudin volutpat velit id tempor. In nibh justo, pharetra et pretium
+dignissim, tempus in turpis. Phasellus eget lobortis nisl. Phasellus sed
+fermentum diam. Nam tempus pharetra odio, quis congue eros imperdiet eu. Aliquam
+dui eros, hendrerit et vulputate vel, porta eu eros. Nullam nisi dui, commodo
+eget pharetra ut, ornare sit amet nunc. Fusce vel neque urna. Maecenas nulla
+ante, egestas at consequat quis, fermentum a enim. Aliquam id tristique urna.
+Integer augue justo, scelerisque et consectetur id, rhoncus eget enim.
+
+{-# START_FILE assets/posts/2015-12-07-tu-quoque.markdown #-}
+---
+title: Tu Quoque
+author: Julius
+---
+
+Vestibulum leo turpis, dignissim quis ultrices sit amet, iaculis ac ligula.
+Pellentesque tristique, velit eget scelerisque scelerisque, est dolor ultrices
+arcu, quis ullamcorper justo arcu luctus mauris. Integer congue molestie nisi id
+posuere. Fusce pellentesque gravida tempus. Integer viverra tortor nec eros
+mollis quis convallis sem laoreet. Nulla id libero ac erat varius laoreet. Proin
+sed est est. Curabitur lacinia fermentum lorem, elementum malesuada ipsum
+malesuada ut. Donec suscipit elit id leo vehicula mattis non sed leo. Morbi
+varius eleifend varius. Nulla vestibulum, neque vitae aliquam eleifend, nisi
+tellus placerat nunc, quis suscipit elit turpis eu tortor. Etiam euismod
+convallis lectus quis venenatis. Phasellus laoreet magna in nibh cursus eu
+egestas nulla convallis. Aliquam vel ullamcorper risus. Fusce dictum, massa id
+consequat viverra, nulla ante tristique est, a faucibus nisi enim nec dui. Donec
+metus ligula, condimentum at porttitor eget, lobortis at quam.
+
+Aenean vel libero in magna ultricies congue in a odio. Donec faucibus rutrum
+ornare. Fusce dictum eleifend fermentum. Vestibulum vel nibh a metus porttitor
+rhoncus. Pellentesque id quam neque, eget molestie arcu. Integer in elit vel
+neque viverra ultricies in eget massa. Nam ut convallis est. Pellentesque eros
+eros, sodales non vehicula et, tincidunt ut odio. Cras suscipit ultrices metus
+sit amet molestie. Fusce enim leo, vehicula sed sodales quis, adipiscing at
+ipsum.
+
+Nunc tempor dignissim enim, sed tincidunt eros bibendum quis. Curabitur et dolor
+augue, id laoreet mi. Nulla cursus felis id dui vehicula vitae ornare lorem
+blandit. Cras eget dui nec odio volutpat pharetra. Fusce hendrerit justo justo,
+vel imperdiet enim. Vivamus elit risus, interdum ultrices accumsan eleifend,
+vestibulum vitae sapien. Integer bibendum ullamcorper tristique. Nulla quis odio
+lectus, quis eleifend augue. Integer a ligula mauris. Aenean et tempus tortor.
+Quisque at tortor mi. Vivamus accumsan feugiat est a blandit. Sed vitae enim ut
+dolor semper sodales. Duis tristique, ante et placerat elementum, nulla tellus
+pellentesque sapien, quis posuere velit mi eget nulla. Sed vestibulum nunc non
+est porttitor ut rutrum nibh semper. Pellentesque habitant morbi tristique
+senectus et netus et malesuada fames ac turpis egestas.
+
+Nulla adipiscing ultricies lobortis. Vivamus iaculis nisl vitae tellus laoreet
+vitae aliquet lacus mollis. Phasellus ut lacus urna, sed sagittis ante. Etiam
+consectetur pretium nisl sed dignissim. Pellentesque convallis, nisl eget
+commodo mollis, sem magna consequat arcu, sed pretium ipsum arcu sit amet neque.
+Aliquam erat volutpat. Morbi sed mi sed urna vestibulum placerat vitae vel
+metus. Fusce ac ante at justo pharetra vehicula. Vivamus vel tortor eget augue
+aliquet aliquet at vel odio. Nunc venenatis, magna quis facilisis fringilla,
+augue tellus varius neque, in vulputate est eros ut tortor. Duis lorem neque,
+aliquam congue posuere id, condimentum non dui. Phasellus ut dui massa,
+porttitor suscipit augue. Praesent quis tellus quam, vel volutpat metus. Vivamus
+enim est, aliquam in imperdiet et, sagittis eu ligula. Vestibulum hendrerit
+placerat orci et aliquet. Cras pharetra, dolor placerat lobortis tempor, metus
+odio cursus ligula, et posuere lacus ligula quis dui.
+
+Donec a lectus eu nibh malesuada aliquam. Proin at metus quam, et tincidunt leo.
+Quisque lacus justo, scelerisque sodales pulvinar sed, dignissim ut sapien.
+Vivamus diam felis, adipiscing sollicitudin ultricies id, accumsan ac felis. In
+eu posuere ligula. Suspendisse potenti. Donec porttitor dictum dui id vehicula.
+Integer ante velit, congue id dictum et, adipiscing a tortor.
+
+{-# START_FILE assets/templates/archive.html #-}
+Here you can find all my previous posts:
+$partial("templates/post-list.html")$
+
+{-# START_FILE assets/templates/default.html #-}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>My Hakyll Blog - $title$</title>
+        <link rel="stylesheet" type="text/css" href="/css/default.css" />
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a href="/">My Hakyll Blog</a>
+            </div>
+            <div id="navigation">
+                <a href="/">Home</a>
+                <a href="/about.html">About</a>
+                <a href="/contact.html">Contact</a>
+                <a href="/archive.html">Archive</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>$title$</h1>
+
+            $body$
+        </div>
+        <div id="footer">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </div>
+    </body>
+</html>
+
+{-# START_FILE assets/templates/post-list.html #-}
+<ul>
+    $for(posts)$
+        <li>
+            <a href="$url$">$title$</a> - $date$
+        </li>
+    $endfor$
+</ul>
+
+{-# START_FILE assets/templates/post.html #-}
+<div class="info">
+    Posted on $date$
+    $if(author)$
+        by $author$
+    $endif$
+</div>
+
+$body$
+
+{-# START_FILE assets/about.rst #-}
+---
+title: About
+---
+Nullam imperdiet sodales orci vitae molestie. Nunc quam orci, pharetra a
+rhoncus vitae, eleifend id felis. Suspendisse potenti. Etiam vitae urna orci.
+Quisque pellentesque dignissim felis, egestas tempus urna luctus vitae. In hac
+habitasse platea dictumst. Morbi fringilla mattis odio, et mattis tellus
+accumsan vitae.
+
+1. Amamus Unicode 碁
+2. Interdum nex magna.
+
+Vivamus eget mauris sit amet nulla laoreet lobortis. Nulla in diam elementum
+risus convallis commodo. Cras vehicula varius dui vitae facilisis. Proin
+elementum libero eget leo aliquet quis euismod orci vestibulum. Duis rhoncus
+lorem consequat tellus vestibulum aliquam. Quisque orci orci, malesuada porta
+blandit et, interdum nec magna.
+
+{-# START_FILE assets/contact.markdown #-}
+---
+title: Contact
+---
+
+I live in a small hut in the mountains of Kumano Kodō on Kii Hantō and would not
+like to be contacted.
+
+{-# START_FILE assets/index.html #-}
+---
+title: Home
+---
+
+<h2>Welcome</h2>
+
+<p>Welcome to my blog!</p>
+
+<p>I've reproduced a list of recent posts here for your reading pleasure:</p>
+
+<h2>Posts</h2>
+$partial("templates/post-list.html")$
+
+<p>…or you can find more in the <a href="/archive.html">archives</a>.</p>
+
+{-# START_FILE .ghci #-}
+:set +m
+
+:set -XBangPatterns
+:set -XConstraintKinds
+:set -XCPP
+:set -XDeriveGeneric
+:set -XFlexibleContexts
+:set -XFlexibleInstances
+:set -XFunctionalDependencies
+:set -XGADTs
+:set -XKindSignatures
+:set -XLambdaCase
+:set -XMultiParamTypeClasses
+:set -XMultiWayIf
+:set -XInstanceSigs
+:set -XRankNTypes
+:set -XRecordWildCards
+:set -XScopedTypeVariables
+:set -XTupleSections
+:set -XTypeFamilies
+:set -XTypeOperators
+
+{-# START_FILE .stylish-haskell.yaml #-}
+columns: 100
+language_extensions:
+  - ConstraintKinds
+  - DeriveGeneric
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - KindSignatures
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - NoImplicitPrelude
+  - LambdaCase
+  - RankNTypes
+  - ScopedTypeVariables
+steps:
+  - imports:
+      align: global
+      list_align: after_alias
+      long_list_align: new_line_multiline
+      list_padding: 2
+      separate_lists: true
+  - language_pragmas:
+      style: vertical
+      align: true
+      remove_redundant: true
+  - records: {}
+
+{-# START_FILE .gitignore #-}
+# Created by https://www.gitignore.io/api/haskell
+
+### Haskell ###
+dist
+dist-*
+cabal-dev
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+.hpc
+.hsenv
+.cabal-sandbox/
+cabal.sandbox.config
+*.prof
+*.aux
+*.hp
+*.eventlog
+.stack-work/
+cabal.project.local
+
+{-# START_FILE .editorconfig #-}
+root = true
+charset = utf-8
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+[*.{yaml,yml}]
+indent_style = space
+indent_size = 2
+
+[*.hs]
+indent_style = space
+indent_size = 2
+
+[*.{css, scss}]
+indent_style = space
+indent_size = 2
+
+[*.html]
+indent_style = space
+indent_size = 2
+
+{-# START_FILE README.md #-}
+# {{name}}
+Fill me out.
+
+{-# START_FILE LICENSE #-}
+Copyright {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}} (c) {{year}}
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Author name here nor the names of other
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
