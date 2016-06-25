@@ -70,7 +70,7 @@ executables:
 import Distribution.Simple
 main = defaultMain
 
-{-# START_FILE build/Intro.hs    #-}
+{-# START_FILE src/Intro.hs    #-}
 module Intro
   ( module Intro
   ) where
@@ -93,7 +93,7 @@ import           Intro.Monad            as Intro
 import           Intro.String           as Intro
 import           Safe                   as Intro
 
-{-# START_FILE build/Intro/Monad.hs #-}
+{-# START_FILE src/Intro/Monad.hs #-}
 module Intro.Monad where
 
 import           Control.Monad
@@ -114,7 +114,7 @@ unlessM c x = c >>= (`unless` x)
 ifThenElseM :: Monad m => m Bool -> m a -> m a -> m a
 ifThenElseM c l r = c >>= \c' -> if c' then l else r
 
-{-# START_FILE build/Intro/String.hs #-}
+{-# START_FILE src/Intro/String.hs #-}
 module Intro.String
   ( module Data.String.Conversions
   , module Intro.String
@@ -153,16 +153,15 @@ type ToString a = ConvertibleStrings a String
 -- | Type that can be recovered from a string
 type FromString a = ConvertibleStrings String a
 
-{-# START_FILE Build.hs     #-}
-import           Development.Shake
-import           Intro
+{-# START_FILE app/Main.hs     #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+import Intro
+import Development.Shake
 
 main :: IO ()
 main = shakeArgs shakeOptions $ do
-  want ["all"]
-
-  phony "all" $
-    putNormal "Build not yet implemented"
+  putNormal "Build"
 
 {-# START_FILE .ghci #-}
 :set +m
@@ -186,6 +185,8 @@ main = shakeArgs shakeOptions $ do
 :set -XTupleSections
 :set -XTypeFamilies
 :set -XTypeOperators
+
+:set prompt "> "
 
 {-# START_FILE .stylish-haskell.yaml #-}
 columns: 100

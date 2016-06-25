@@ -210,6 +210,8 @@ main = putStrLn "Test suite not yet implemented"
 :set -XTypeFamilies
 :set -XTypeOperators
 
+:set prompt "> "
+
 {-# START_FILE .stylish-haskell.yaml #-}
 columns: 100
 language_extensions:
