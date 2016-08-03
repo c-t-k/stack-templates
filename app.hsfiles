@@ -279,7 +279,7 @@ indent_size = 2
 
 [*.hs]
 indent_style = space
-indent_size = 4
+indent_size = 2
 
 {-# START_FILE README.md #-}
 # {{name}}
