@@ -8,7 +8,7 @@ license: BSD3
 author: {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}}
 maintainer: {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}} <{{author-email}}{{^author-email}}chris.t.kaminski@gmail.com{{/author-email}}>
 copyright: {{copyright}}{{^copyright}}{{year}} {{author-name}}{{^author-name}}Chris Kaminski{{/author-name}}{{/copyright}}
-category: {{category}}{{^category}}Web{{/category}}
+category: {{category}}{{^category}}System{{/category}}
 github: {{github-username}}{{^github-username}}c-t-k{{/github-username}}/{{name}}
 
 ghc-options: -Wall -fwarn-tabs -fno-warn-type-defaults
@@ -62,15 +62,6 @@ when:
 
 library:
   source-dirs: src
-
-executables:
-  {{name}}:
-    source-dirs: app
-    main: Main.hs
-    ghc-options: -threaded -rtsopts -with-rtsopts=-N
-    dependencies:
-      - {{name}}
-      - optparse-applicative
 
 tests:
   {{name}}-test:
@@ -192,14 +183,6 @@ type FromString a = ConvertibleStrings String a
 
 printf :: (MonadIO m, Params ps) => Format -> ps -> m ()
 printf = F.print
-
-{-# START_FILE app/Main.hs     #-}
-{-# LANGUAGE OverloadedStrings #-}
-
-import           Intro
-
-main :: IO ()
-main = putStrLn "Main not yet implemented"
 
 {-# START_FILE test/Spec.hs    #-}
 {-# LANGUAGE OverloadedStrings #-}
