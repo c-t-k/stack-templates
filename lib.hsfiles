@@ -234,17 +234,20 @@ language_extensions:
   - RankNTypes
   - ScopedTypeVariables
 steps:
+  - simple_align:
+      cases: true
+      top_level_patterns: true
+      records: true
   - imports:
       align: global
       list_align: after_alias
       long_list_align: new_line_multiline
-      list_padding: 2
+      list_padding: 4
       separate_lists: true
   - language_pragmas:
       style: vertical
       align: true
       remove_redundant: true
-  - records: {}
 
 {-# START_FILE .gitignore #-}
 # Created by https://www.gitignore.io/api/haskell
@@ -284,7 +287,7 @@ indent_size = 2
 
 [*.hs]
 indent_style = space
-indent_size = 2
+indent_size = 4
 
 {-# START_FILE README.md #-}
 # {{name}}
