@@ -82,19 +82,28 @@ main = defaultMain
 
 {-# START_FILE src/Intro.hs    #-}
 module Intro
-  ( module Intro
-  ) where
+    ( module Intro
+    ) where
 
-import           BasicPrelude                 as Intro hiding
-  (decodeUtf8, encodeUtf8, fpFromText, fpToString, fpToText, ltextToString, readMay, textToString)
-import           Control.Concurrent.STM       as Intro
-import           Control.DeepSeq              as Intro
-import           Control.Monad.Except         as Intro
-import           Control.Monad.Reader         as Intro
-import           Intro.Functor                as Intro
-import           Intro.Monad                  as Intro
-import           Intro.String                 as Intro
-import           Safe                         as Intro
+import           BasicPrelude           as Intro hiding
+    ( decodeUtf8
+    , encodeUtf8
+    , fpFromText
+    , fpToString
+    , fpToText
+    , ltextToString
+    , readMay
+    , textToString
+    )
+import           Control.Concurrent.STM as Intro
+import           Control.DeepSeq        as Intro
+import           Control.Monad.Except   as Intro
+import           Control.Monad.Reader   as Intro
+import           Intro.Functor          as Intro
+import           Intro.Monad            as Intro
+import           Intro.String           as Intro
+import           Safe                   as Intro
+
 
 {-# START_FILE src/Intro/Functor.hs #-}
 module Intro.Functor where
@@ -115,9 +124,9 @@ import           Data.Foldable
 
 while :: Monad m => (a -> Bool) -> m a -> m a
 while c x = do
-  res <- x
-  if c res then while c x
-  else return res
+    res <- x
+    if c res then while c x
+    else return res
 
 whenM :: Monad m => m Bool -> m () -> m ()
 whenM c x = c >>= (`when` x)
@@ -133,10 +142,10 @@ foldedM z xs f = foldrM f z xs
 
 eitherM :: Monad m => (a -> m c) -> (b -> m c) -> m (Either a b) -> m c
 eitherM f g x = do
-  x' <- x
-  case x' of
-    Left xl -> f xl
-    Right xr -> g xr
+    x' <- x
+    case x' of
+      Left xl -> f xl
+      Right xr -> g xr
 
 {-# START_FILE src/Intro/String.hs #-}
 module Intro.String
