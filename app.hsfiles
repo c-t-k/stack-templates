@@ -131,10 +131,10 @@ import           Data.Either
 import           Data.Foldable
 
 while :: Monad m => (a -> Bool) -> m a -> m a
-while c x = do
-    res <- x
-    if c res then while c x
-    else return res
+while c x = x >>= \x' ->
+    if c x'
+    then while c x
+    else return x'
 
 whenM :: Monad m => m Bool -> m () -> m ()
 whenM c x = c >>= (`when` x)
@@ -149,11 +149,7 @@ foldedM :: (Foldable t, Monad m) => b -> t a -> (a -> b -> m b) -> m b
 foldedM z xs f = foldrM f z xs
 
 eitherM :: Monad m => (a -> m c) -> (b -> m c) -> m (Either a b) -> m c
-eitherM f g x = do
-    x' <- x
-    case x' of
-      Left xl -> f xl
-      Right xr -> g xr
+eitherM f g x = x >>= either f g
 
 {-# START_FILE src/Intro/String.hs #-}
 module Intro.String
