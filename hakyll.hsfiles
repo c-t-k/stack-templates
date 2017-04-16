@@ -16,6 +16,7 @@ ghc-options: -Wall -fwarn-tabs -fno-warn-type-defaults
 default-extensions:
   - ConstraintKinds
   - DeriveGeneric
+  - ExtendedDefaultRules
   - FlexibleContexts
   - FlexibleInstances
   - FunctionalDependencies
@@ -624,6 +625,7 @@ $partial("templates/post-list.html")$
 :set -XConstraintKinds
 :set -XCPP
 :set -XDeriveGeneric
+:set -XExtendedDefaultRules
 :set -XFlexibleContexts
 :set -XFlexibleInstances
 :set -XFunctionalDependencies
@@ -647,6 +649,7 @@ columns: 100
 language_extensions:
   - ConstraintKinds
   - DeriveGeneric
+  - ExtendedDefaultRules
   - FlexibleContexts
   - FlexibleInstances
   - FunctionalDependencies
